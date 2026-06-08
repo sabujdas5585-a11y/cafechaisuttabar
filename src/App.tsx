@@ -857,20 +857,16 @@ export default function App() {
             {/* SCREEN 1: COZY DEN HOME */}
             {activeScreen === 'home' && (
               <>
-                {/* Visual Accent Hero Section: Immersive HD Video Background */}
+                {/* Visual Accent Hero Section: Immersive Image Background */}
                 <div className="relative overflow-hidden p-8 md:p-14 rounded-3xl border border-stone-800/80 flex flex-col md:flex-row items-center gap-8 shadow-2xl min-h-[420px] md:min-h-[460px]">
-                  {/* High Quality Tea Pouring Loop Video Background */}
+                  {/* High Quality Cafe Background Image */}
                   <div className="absolute inset-0 z-0 select-none pointer-events-none">
-                    <video
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover scale-105"
-                    >
-                      <source src="https://assets.mixkit.co/videos/preview/mixkit-pouring-hot-tea-into-a-cup-43033-large.mp4" type="video/mp4" />
-                      <source src="https://assets.mixkit.co/videos/preview/mixkit-pouring-tea-from-a-kettle-into-a-cup-43032-large.mp4" type="video/mp4" />
-                    </video>
+                    <img
+                      src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAF0DEFcTrgtG8YZ94MUvnRjVFgMMNXx5OchpYRGYEVZzOKphdoYgYtp3pnwhXDsuITUnQU7wWHQGSQv3Ul0cxjszxSPOaqxnBmoMqtfxlbWfwmx_X_tTbmd1miZTiQpQZHVw2o=s680-w680-h510-rw"
+                      alt="Cafe Background"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover scale-100"
+                    />
                     {/* Multilayer premium dark gradients for maximum overlay text readability */}
                     <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/85 to-transparent md:block hidden" />
                     <div className="absolute inset-0 bg-stone-950/75 md:hidden block" />
@@ -879,15 +875,52 @@ export default function App() {
 
                   {/* Overlaid Hero Content */}
                   <div className="relative z-10 flex-1 space-y-4 text-center md:text-left">
-                    <span className="bg-amber-500/10 text-amber-400 text-[10px] font-mono px-3 py-1 rounded-full uppercase font-bold tracking-widest border border-amber-500/30 backdrop-blur-md inline-block">
-                      Cozy Tea Lounges in Jhargram
-                    </span>
+                    {/* Animated Curved Ribbon Note resembling the reference image */}
+                    <div className="relative overflow-visible h-14 w-full max-w-[320px] mx-auto md:mx-0 my-3 flex items-center justify-center md:justify-start">
+                      <svg
+                        className="w-full h-18 overflow-visible select-none pointer-events-none"
+                        viewBox="0 0 320 60"
+                      >
+                        <defs>
+                          <path
+                            id="curved-note-path"
+                            d="M -20,30 C 50,5 110,55 160,30 C 210,5 270,55 340,30"
+                          />
+                        </defs>
+                        {/* Shadow Curve */}
+                        <use
+                          href="#curved-note-path"
+                          fill="none"
+                          stroke="#1c1613"
+                          strokeWidth="24"
+                          className="opacity-75"
+                        />
+                        {/* Main Colored Ribbon Line */}
+                        <use
+                          href="#curved-note-path"
+                          fill="none"
+                          stroke="#f59e0b"
+                          strokeWidth="20"
+                          strokeLinecap="round"
+                        />
+                        {/* Text Path on Curve */}
+                        <text className="fill-stone-950 font-sans font-black text-[8px] uppercase tracking-[0.14em]">
+                          <textPath href="#curved-note-path" startOffset="0%">
+                            COZY TEA LOUNGES IN JHARGRAM • JHARGRAM • COZY TEA LOUNGES IN JHARGRAM • JHARGRAM •
+                            <animate
+                              attributeName="startOffset"
+                              from="0%"
+                              to="-50%"
+                              dur="10s"
+                              repeatCount="indefinite"
+                            />
+                          </textPath>
+                        </text>
+                      </svg>
+                    </div>
                     <h2 className="text-3xl md:text-6xl font-black text-white tracking-tight leading-none drop-shadow-md">
                       Brewing Conversations over <span className="text-amber-500">Clay Kulhads</span>
                     </h2>
-                    <p className="text-stone-200 text-xs md:text-sm leading-relaxed max-w-lg font-medium drop-shadow-sm">
-                      Welcome to <strong>Cafe Chai Sutta Bar</strong>, located elegantly at Madhuban More, Jhargram. We toast crispy bun maskas, double masala cheese maggi, and herbal suttas to absolute warm perfection.
-                    </p>
                     <div className="flex flex-col sm:flex-row gap-3 pt-2">
                       <button
                         onClick={() => setActiveScreen('menu')}
