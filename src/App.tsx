@@ -4,15 +4,19 @@ import {
   INITIAL_MENU_ITEMS,
   INITIAL_INGREDIENTS,
   INITIAL_BOOKINGS,
-  INITIAL_TESTIMONIALS
+  INITIAL_TESTIMONIALS,
+  INITIAL_GALLERY_IMAGES
 } from './data/initialData';
-import { MenuItem, Booking, Ingredient, Order, Testimonial } from './types';
+import { MenuItem, Booking, Ingredient, Order, Testimonial, GalleryImage, PaymentSettings } from './types';
 import NotificationCenter, { triggerPushNotification } from './components/NotificationCenter';
+import ChatWidget from './components/ChatWidget';
 import AdminPanel from './components/AdminPanel';
 import MenuSection from './components/MenuSection';
 import BookingSection from './components/BookingSection';
 import GallerySection from './components/GallerySection';
+import SplashAnimation from './components/SplashAnimation';
 import UserProfileSection from './components/UserProfileSection';
+import PaymentPage from './components/PaymentPage';
 import {
   Coffee, MapPin, Phone, Facebook, Star, LogIn, LogOut, Code, Heart, HelpCircle,
   Menu, X, Sparkles, MessageSquare, Plus, Clock, ExternalLink, Instagram, Send, Mail, Bell
@@ -34,6 +38,7 @@ import {
   collection,
   doc,
   setDoc,
+  getDoc,
   deleteDoc,
   onSnapshot,
   getDocs,
@@ -41,9 +46,11 @@ import {
 } from 'firebase/firestore';
 
 export default function App() {
-  // Navigation Screens ('home' | 'menu' | 'bookings' | 'gallery' | 'profile')
-  const [activeScreen, setActiveScreen] = useState<'home' | 'menu' | 'bookings' | 'gallery' | 'profile'>('home');
+  const [showSplash, setShowSplash] = useState(true);
+  // Navigation Screens ('home' | 'menu' | 'bookings' | 'gallery' | 'profile' | 'payment')
+  const [activeScreen, setActiveScreen] = useState<'home' | 'menu' | 'bookings' | 'gallery' | 'profile' | 'payment'>('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [orderIdForPayment, setOrderIdForPayment] = useState<string | null>(null);
 
   // States with LocalStorage Sync and live Firestore connection fallback
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
@@ -70,6 +77,13 @@ export default function App() {
     const saved = localStorage.getItem('cafe_testimonials');
     return saved ? JSON.parse(saved) : INITIAL_TESTIMONIALS;
   });
+
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() => {
+    const saved = localStorage.getItem('cafe_gallery_images');
+    return saved ? JSON.parse(saved) : INITIAL_GALLERY_IMAGES;
+  });
+
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
 
   // Helper helper to generate state-synchronized Firestore write mutations
   const createFirebaseSetter = <T extends { id: string }>(
@@ -109,6 +123,7 @@ export default function App() {
   const setIngredientsWithFirebase = createFirebaseSetter<Ingredient>('ingredients', setIngredients);
   const setOrdersWithFirebase = createFirebaseSetter<Order>('orders', setOrders);
   const setTestimonialsWithFirebase = createFirebaseSetter<Testimonial>('testimonials', setTestimonials);
+  const setGalleryImagesWithFirebase = createFirebaseSetter<GalleryImage>('gallery_images', setGalleryImages);
 
   // Connection testing + Database bootstrapping + real-time listeners initialization
   useEffect(() => {
@@ -122,34 +137,48 @@ export default function App() {
         }
       }
 
-      // 2. Bootstrap collections if they are empty
+      // 2. Bootstrap collections if they are empty (only once, using a system bootstrap flag)
       try {
-        const menuSnap = await getDocs(collection(db, 'menuItems'));
-        if (menuSnap.empty) {
-          for (const item of INITIAL_MENU_ITEMS) {
-            await setDoc(doc(db, 'menuItems', item.id), sanitizeForFirestore(item));
-          }
-        }
+        const bootstrapDocRef = doc(db, 'system', 'bootstrap');
+        const bootstrapSnap = await getDoc(bootstrapDocRef);
         
-        const bookingsSnap = await getDocs(collection(db, 'bookings'));
-        if (bookingsSnap.empty) {
-          for (const item of INITIAL_BOOKINGS) {
-            await setDoc(doc(db, 'bookings', item.id), sanitizeForFirestore(item));
+        if (!bootstrapSnap.exists()) {
+          const menuSnap = await getDocs(collection(db, 'menuItems'));
+          if (menuSnap.empty) {
+            for (const item of INITIAL_MENU_ITEMS) {
+              await setDoc(doc(db, 'menuItems', item.id), sanitizeForFirestore(item));
+            }
           }
-        }
+          
+          const bookingsSnap = await getDocs(collection(db, 'bookings'));
+          if (bookingsSnap.empty) {
+            for (const item of INITIAL_BOOKINGS) {
+              await setDoc(doc(db, 'bookings', item.id), sanitizeForFirestore(item));
+            }
+          }
 
-        const ingredientsSnap = await getDocs(collection(db, 'ingredients'));
-        if (ingredientsSnap.empty) {
-          for (const item of INITIAL_INGREDIENTS) {
-            await setDoc(doc(db, 'ingredients', item.id), sanitizeForFirestore(item));
+          const ingredientsSnap = await getDocs(collection(db, 'ingredients'));
+          if (ingredientsSnap.empty) {
+            for (const item of INITIAL_INGREDIENTS) {
+              await setDoc(doc(db, 'ingredients', item.id), sanitizeForFirestore(item));
+            }
           }
-        }
 
-        const testimonialsSnap = await getDocs(collection(db, 'testimonials'));
-        if (testimonialsSnap.empty) {
-          for (const item of INITIAL_TESTIMONIALS) {
-            await setDoc(doc(db, 'testimonials', item.id), sanitizeForFirestore(item));
+          const testimonialsSnap = await getDocs(collection(db, 'testimonials'));
+          if (testimonialsSnap.empty) {
+            for (const item of INITIAL_TESTIMONIALS) {
+              await setDoc(doc(db, 'testimonials', item.id), sanitizeForFirestore(item));
+            }
           }
+
+          const gallerySnap = await getDocs(collection(db, 'gallery_images'));
+          if (gallerySnap.empty) {
+            for (const item of INITIAL_GALLERY_IMAGES) {
+              await setDoc(doc(db, 'gallery_images', item.id), sanitizeForFirestore(item));
+            }
+          }
+
+          await setDoc(bootstrapDocRef, { initialized: true });
         }
       } catch (error) {
         console.warn('Bootstrap or permissions warming status:', error);
@@ -163,9 +192,7 @@ export default function App() {
         snapshot.forEach((docSnap) => {
           items.push(docSnap.data() as MenuItem);
         });
-        if (items.length > 0) {
-          setMenuItems(items);
-        }
+        setMenuItems(items);
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, 'menuItems');
       });
@@ -175,9 +202,7 @@ export default function App() {
         snapshot.forEach((docSnap) => {
           items.push(docSnap.data() as Booking);
         });
-        if (items.length > 0) {
-          setBookings(items);
-        }
+        setBookings(items);
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, 'bookings');
       });
@@ -187,9 +212,7 @@ export default function App() {
         snapshot.forEach((docSnap) => {
           items.push(docSnap.data() as Ingredient);
         });
-        if (items.length > 0) {
-          setIngredients(items);
-        }
+        setIngredients(items);
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, 'ingredients');
       });
@@ -209,11 +232,27 @@ export default function App() {
         snapshot.forEach((docSnap) => {
           items.push(docSnap.data() as Testimonial);
         });
-        if (items.length > 0) {
-          setTestimonials(items);
-        }
+        setTestimonials(items);
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, 'testimonials');
+      });
+
+      const unsubGallery = onSnapshot(collection(db, 'gallery_images'), (snapshot) => {
+        const items: GalleryImage[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push(docSnap.data() as GalleryImage);
+        });
+        setGalleryImages(items);
+      }, (err) => {
+        handleFirestoreError(err, OperationType.GET, 'gallery_images');
+      });
+
+      const unsubPayment = onSnapshot(doc(db, 'system', 'payment_settings'), (snapshot) => {
+        if (snapshot.exists()) {
+          setPaymentSettings(snapshot.data() as PaymentSettings);
+        }
+      }, (err) => {
+        handleFirestoreError(err, OperationType.GET, 'system/payment_settings');
       });
 
       return () => {
@@ -222,6 +261,8 @@ export default function App() {
         unsubIngredients();
         unsubOrders();
         unsubTestimonials();
+        unsubGallery();
+        unsubPayment();
       };
     });
   }, []);
@@ -326,6 +367,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('cafe_testimonials', JSON.stringify(testimonials));
   }, [testimonials]);
+
+  useEffect(() => {
+    localStorage.setItem('cafe_gallery_images', JSON.stringify(galleryImages));
+  }, [galleryImages]);
 
   useEffect(() => {
     localStorage.setItem('cafe_is_admin', String(isAdmin));
@@ -480,6 +525,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans selection:bg-amber-600 selection:text-stone-950 pb-20">
       
+      <AnimatePresence>
+        {showSplash && <SplashAnimation onComplete={() => setShowSplash(false)} />}
+      </AnimatePresence>
+      
       {/* Real-time iOS Style Push Notifications Hub */}
       <NotificationCenter user={user} />
 
@@ -502,7 +551,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-sm font-black font-mono tracking-tight uppercase text-amber-500">
-                Chai Sutta Bar
+                Cafe Chai Sutta Bar
               </h1>
               <span className="text-[9px] text-stone-400 font-mono tracking-widest block -mt-1 uppercase">
                 Madhuban More, Jhargram
@@ -848,6 +897,8 @@ export default function App() {
               setOrders={setOrdersWithFirebase}
               testimonials={testimonials}
               setTestimonials={setTestimonialsWithFirebase}
+              galleryImages={galleryImages}
+              setGalleryImages={setGalleryImagesWithFirebase}
               onClose={() => setViewingAdminPortal(false)}
             />
           </div>
@@ -1004,144 +1055,147 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Testimonial customer reviews list */}
-                <div className="max-w-xl mx-auto w-full">
-                  <style>{`
-                    .custom-scrollbar::-webkit-scrollbar {
-                      width: 5px;
-                    }
-                    .custom-scrollbar::-webkit-scrollbar-track {
-                      background: transparent;
-                    }
-                    .custom-scrollbar::-webkit-scrollbar-thumb {
-                      background: #2b2521;
-                      border-radius: 999px;
-                    }
-                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                      background: #443e38;
-                    }
-                  `}</style>
 
-                  <div className="bg-stone-900 border border-stone-850 p-6 sm:p-8 rounded-[2.5rem] shadow-2xl space-y-6">
-                    {/* Header */}
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-xs font-serif text-amber-500 font-extrabold uppercase tracking-widest">
-                        KIND WORDS
-                      </span>
-                      <span className="text-[10px] text-stone-500 font-mono">
-                        {testimonials.filter(test => test.isVisible !== false).length} Active Reviews
-                      </span>
-                    </div>
 
-                    {/* Scrollable list of reviews */}
-                    <div className="overflow-y-auto max-h-[340px] pr-2 space-y-4 custom-scrollbar">
-                      {testimonials.filter(test => test.isVisible !== false).map(test => (
-                        <div
-                          key={test.id}
-                          className="bg-stone-950/45 border border-stone-850 rounded-2xl p-4.5 space-y-2.5 transition duration-300 hover:border-stone-800"
-                        >
-                          {/* Stars */}
-                          <div className="flex gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-3.5 h-3.5 ${
-                                  i < test.rating ? 'text-amber-500 fill-amber-500' : 'text-stone-750'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          {/* Quote */}
-                          <p className="text-stone-300 text-xs leading-relaxed italic font-sans">
-                            "{test.text}"
-                          </p>
-                          {/* Footer */}
-                          <div className="flex justify-between items-center text-[10px] text-stone-500 pt-1 border-t border-stone-950/40">
-                            <span className="font-semibold text-stone-400">- {test.name}</span>
-                            <span className="font-mono">{test.date}</span>
-                          </div>
+                {/* =============== GUEST JOURNALS & CUSTOMER REVIEWS SECTOR =============== */}
+                <div id="reviews-section" className="space-y-8 scroll-mt-24 max-w-3xl mx-auto">
+                  <div className="flex items-center justify-between border-b border-stone-800/50 pb-4">
+                    <h3 className="text-xl font-black text-amber-500 uppercase tracking-widest font-serif">Kind Words</h3>
+                    <span className="text-xs text-stone-500 font-mono">
+                      {testimonials.filter(t => t.isVisible !== false).length} Active Reviews
+                    </span>
+                  </div>
+
+                  <div className="space-y-8">
+                    {/* Testimonials Stream Feed */}
+                    <div className="space-y-5 max-h-[480px] overflow-y-auto pr-2">
+                      {testimonials.filter(t => t.isVisible !== false).length === 0 ? (
+                        <div className="bg-stone-900/40 rounded-2xl border border-stone-850 p-12 text-center text-stone-500 italic text-xs">
+                          No public journals found. Be the first to share your cozy memories!
                         </div>
-                      ))}
+                      ) : (
+                        testimonials
+                          .filter(t => t.isVisible !== false)
+                          .map((item, index) => (
+                            <motion.div
+                              key={item.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
+                              className="bg-stone-900 border border-stone-800/80 rounded-2xl p-6 hover:border-stone-700/60 transition group"
+                            >
+                              <div className="flex gap-1.5 text-amber-500 mb-4">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                                      i < item.rating ? 'fill-amber-500 text-amber-500' : 'text-stone-800 fill-transparent'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <p className="text-stone-300 text-sm italic leading-relaxed mb-6">
+                                "{item.text}"
+                              </p>
+                              
+                              <div className="flex items-center justify-between border-t border-stone-800/80 pt-4">
+                                <span className="text-xs text-stone-200 font-bold flex items-center gap-1.5">
+                                  - {item.name}
+                                </span>
+                                <span className="text-[10px] text-stone-500 font-mono tracking-wider">
+                                  {item.date}
+                                </span>
+                              </div>
+
+                              {item.adminNotes && (
+                                <div className="bg-stone-950/40 border-l-2 border-amber-500 p-3 text-[11px] text-amber-400 rounded-r-lg font-mono leading-relaxed mt-4">
+                                  <span className="font-bold text-[9px] uppercase tracking-wider block text-amber-600 mb-1">Response from Deck Manager</span>
+                                  "{item.adminNotes}"
+                                </div>
+                              )}
+                            </motion.div>
+                          ))
+                      )}
                     </div>
 
-                    {/* Form divider */}
-                    <div className="border-t border-stone-800/80 pt-5 space-y-4">
-                      <h4 className="text-xs font-black text-stone-200 uppercase tracking-wide">
+                    {/* Review Writing Portal Box */}
+                    <div className="pt-6 space-y-6">
+                      <h4 className="text-sm font-black text-stone-100 uppercase tracking-widest">
                         Leave Your Experience
                       </h4>
 
-                      {reviewSuccess && (
-                        <div className="text-[11px] text-emerald-400 font-sans italic bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-900/50">
-                          Review published successfully! Check the push notifications.
-                        </div>
-                      )}
-
-                      <form onSubmit={handleAddReview} className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <form onSubmit={handleAddReview} className="space-y-4 font-sans">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <input
                             type="text"
                             required
                             value={newReviewName}
-                            onChange={e => setNewReviewName(e.target.value)}
+                            onChange={(e) => setNewReviewName(e.target.value)}
                             placeholder="Your Name"
-                            className="bg-stone-950/60 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 placeholder-stone-600 text-xs focus:outline-none focus:border-amber-500/50 w-full"
+                            className="w-full bg-stone-950 border border-stone-850 focus:border-amber-500 text-stone-300 text-sm px-4 py-3.5 rounded-xl outline-none transition"
                           />
 
-                          <div className="relative">
-                            <select
-                              value={newReviewRating}
-                              onChange={e => setNewReviewRating(Number(e.target.value))}
-                              className="w-full bg-stone-950/60 border border-stone-800 rounded-xl pl-3.5 pr-8 py-2.5 text-stone-300 text-xs font-medium focus:outline-none focus:border-amber-500/50 appearance-none cursor-pointer"
-                            >
-                              <option value={5}>⭐⭐⭐⭐⭐ (5/5)</option>
-                              <option value={4}>⭐⭐⭐⭐ (4/5)</option>
-                              <option value={3}>⭐⭐⭐ (3/5)</option>
-                              <option value={2}>⭐⭐ (2/5)</option>
-                              <option value={1}>⭐ (1/5)</option>
-                            </select>
-                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-stone-500 text-[8px]">
-                              ▼
+                          <div className="relative w-full bg-stone-950 border border-stone-850 hover:border-stone-700 text-stone-300 rounded-xl outline-none transition flex items-center justify-between px-4 py-3.5 cursor-pointer group">
+                            <div className="flex items-center gap-1.5">
+                              {Array.from({ length: 5 }).map((_, i) => {
+                                const starValue = i + 1;
+                                return (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setNewReviewRating(starValue);
+                                    }}
+                                    className="outline-none"
+                                  >
+                                    <Star
+                                      className={`w-4 h-4 transition-transform active:scale-90 ${
+                                        starValue <= newReviewRating ? 'fill-amber-500 text-amber-500' : 'text-stone-700 fill-transparent'
+                                      }`}
+                                    />
+                                  </button>
+                                );
+                              })}
+                              <span className="text-xs font-mono font-bold text-stone-400 ml-2">
+                                ({newReviewRating}/5)
+                              </span>
                             </div>
+                            <span className="text-[10px] text-stone-600 group-hover:text-stone-400 transition">▼</span>
                           </div>
                         </div>
 
                         <textarea
                           required
-                          rows={3}
+                          rows={4}
                           value={newReviewText}
-                          onChange={e => setNewReviewText(e.target.value)}
+                          onChange={(e) => setNewReviewText(e.target.value)}
                           placeholder="Share details of your cozy cafe experience..."
-                          className="w-full bg-stone-950/60 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 placeholder-stone-600 text-xs focus:outline-none focus:border-amber-500/50 resize-none"
+                          className="w-full bg-stone-950 border border-stone-850 focus:border-amber-500 text-stone-300 text-sm p-4 rounded-xl outline-none transition resize-none leading-relaxed"
                         />
 
-                        {user ? (
-                          <button
-                            type="submit"
-                            className="w-full bg-amber-600 hover:bg-amber-500 active:scale-[0.99] text-stone-950 font-black tracking-widest text-[11px] py-3 rounded-xl transition duration-200 uppercase cursor-pointer"
-                          >
-                            PUBLISH MY REVIEW
-                          </button>
-                        ) : (
-                          <div className="space-y-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsSignUp(false);
-                                setShowLoginModal(true);
-                              }}
-                              className="w-full bg-gradient-to-r from-amber-600 to-amber-550 hover:from-amber-500 hover:to-amber-450 text-stone-950 font-black tracking-widest text-[11px] py-3 rounded-xl transition duration-300 uppercase cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-950/20"
-                            >
-                              <LogIn className="w-4 h-4" /> LOGIN TO PUBLISH REVIEW
-                            </button>
-                            <p className="text-[10px] text-stone-500 font-sans text-center">
-                              Please register or authenticate your profile first to write a review.
-                            </p>
+                        {reviewSuccess && (
+                          <div className="bg-emerald-950/60 text-emerald-450 border border-emerald-900/30 text-[11px] px-4 py-3 rounded-xl font-mono leading-normal">
+                            🎉 Journal published successfully! Your review is broadcast live to the public log.
                           </div>
                         )}
+
+                        <div className="flex justify-start">
+                          <button
+                            type="submit"
+                            className="bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold text-xs px-8 py-3.5 rounded-xl transition shadow-lg shadow-amber-500/5 flex items-center gap-2 cursor-pointer"
+                          >
+                            Submit
+                          </button>
+                        </div>
                       </form>
                     </div>
                   </div>
                 </div>
+
+
+
+
 
                 {/* =============== INTEGRATED SOCIAL MEDIA LINKS =============== */}
                 <div className="bg-stone-900 border border-stone-800 p-6 md:p-8 rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center max-w-4xl mx-auto">
@@ -1290,12 +1344,23 @@ export default function App() {
                 setOrders={setOrdersWithFirebase}
                 user={user}
                 onOpenLogin={() => setShowLoginModal(true)}
+                setActiveScreen={setActiveScreen}
+                setOrderIdForPayment={setOrderIdForPayment}
+              />
+            )}
+
+            {/* SCREEN 6: PAYMENT PAGE */}
+            {activeScreen === 'payment' && orderIdForPayment && (
+              <PaymentPage
+                paymentSettings={paymentSettings}
+                order={orders.find(o => o.id === orderIdForPayment)}
+                onClose={() => setActiveScreen('home')}
               />
             )}
 
             {/* SCREEN 3: COZY GALLERY */}
             {activeScreen === 'gallery' && (
-              <GallerySection />
+              <GallerySection galleryImages={galleryImages} />
             )}
 
             {/* SCREEN 4: TABLE RESERVATION DISPATCH */}

@@ -1,4 +1,4 @@
-import { MenuItem, Ingredient, Testimonial, Booking } from '../types';
+import { MenuItem, Ingredient, Testimonial, Booking, GalleryImage } from '../types';
 
 export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
@@ -121,6 +121,160 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
   { id: 'i8', name: 'Amul Butter Blocks', currentQty: 8, minQty: 3, unit: 'Kgs', category: 'dairy' },
   { id: 'i9', name: 'Paneer Slabs & Veggies', currentQty: 5, minQty: 2, unit: 'Kgs', category: 'fresh' }
 ];
+
+export const INITIAL_GALLERY_IMAGES: GalleryImage[] = [
+  {
+    id: 'g1',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAE_IPT3HLIwC0bc_UJJjfL2QP5-5oPkUQ2oIu1JiWAOMSNY72nxsBeMCiCdg2qCabdgyLDQC63HwdeYL9yiy7sqpXlFgimnM0Pgf2X2PZmuCte30RVXS_xRvgWRILJN77gY98HJZw=s680-w680-h510-rw',
+    caption: 'Cozy Morning Sip',
+    color: 'blue',
+    likes: 142,
+    views: 610,
+    borderClass: 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.45)] text-cyan-400',
+    glowColor: 'rgba(6,182,212,0.3)'
+  },
+  {
+    id: 'g2',
+    url: 'https://lh3.googleusercontent.com/proxy/FC8BF426kHTBdOnnlTnh8iQPl8MQCp9TK4RNyJOoIKE2w6bvlJYRke7nNjpYOxUV2QI-Yzg_QNboX-OAsdOcMT8op-Afmve1zcze_Y1Sg5DPLdg19lou6aKtn-_8Q765y-6ajTvsgqSGOaXZHO2rvEajid3vWA=s680-w680-h510-rw',
+    caption: 'Steaming Kullad',
+    color: 'pink',
+    likes: 198,
+    views: 840,
+    borderClass: 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.45)] text-pink-400',
+    glowColor: 'rgba(236,72,153,0.3)'
+  },
+  {
+    id: 'g3',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAGZ-ud6Vi1QqDq9ac8hNteypq3SZwzZW8UHP-Ijv9Km1T_LfCQ4bIWSZ4LuLsURU-q5MmyFbmyUwBQkTL7gGlGRPfecRURbbMWlNe5gT7ag1rhKIQJ4y7Spj2VZjnMSXLx1IDE=s680-w680-h510-rw',
+    caption: 'Warm Evening Views',
+    color: 'amber',
+    likes: 210,
+    views: 920,
+    borderClass: 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.45)] text-amber-400',
+    glowColor: 'rgba(245,158,11,0.3)'
+  },
+  {
+    id: 'g4',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAGUGQcRJtvZD5ADrDaCVdcAsUhEt3AyOmTU9dxTaZxPr7MG3S-4hfh33xyOfSYVYp435I0OeNaKvM5f0sctuMFg42pEs8vsJPEZhyhL3wlFrVQ6sidUlKXFY_gLuK2WqkU98vzMIA=s680-w680-h510-rw',
+    caption: 'Streetlights & Samosas',
+    color: 'purple',
+    likes: 175,
+    views: 740,
+    borderClass: 'border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.45)] text-purple-400',
+    glowColor: 'rgba(168,85,247,0.3)'
+  },
+  {
+    id: 'g5',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAFInqCtLY21Szf80vNr-WfyrcadW_TrGPSFpZ86OsYyUMTbZRH9xBPiqXLGkIOTzWZU145cXf3psWvfezJChxapITSYviLSDCV2HrJ6_5SXH-PNs1kk1H7L8Y15HtCmaROEPwSL4A=s680-w680-h510-rw',
+    caption: 'Fresh Ingredients',
+    color: 'green',
+    likes: 153,
+    views: 650,
+    borderClass: 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.45)] text-emerald-400',
+    glowColor: 'rgba(16,185,129,0.3)'
+  },
+  {
+    id: 'g6',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAFW3V8-REjtbSAMEiWTLGI0VtR9qJLuG0Pq5M5TnvOjz5rtH-64AXcj6yKfq1g7VImHQPmAsvqiltv6l1VzikooltnG0dHbxkexbu7sJdxm_Pkpf74z4GT1hBpzWEPfjjGZ9aEk=s680-w680-h510-rw',
+    caption: 'Busy Night Counters',
+    color: 'blue',
+    likes: 167,
+    views: 690,
+    borderClass: 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.45)] text-cyan-400',
+    glowColor: 'rgba(6,182,212,0.3)'
+  },
+  {
+    id: 'g7',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAH0uDloMfxAZbY29ROeDp3cJmnhngpT-kvhHAdnR_8Sp-Slfh7wf-0Xx35scohBAqWwPMNCScfLeREzD2NxcR4glRV4DeMJU9J0Q9VTXWgJ36nFYYzcIqHXLzCggXkm3OHIEi_ihQ=s680-w680-h510-rw',
+    caption: 'Friends Corner',
+    color: 'pink',
+    likes: 220,
+    views: 990,
+    borderClass: 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.45)] text-pink-400',
+    glowColor: 'rgba(236,72,153,0.3)'
+  },
+  {
+    id: 'g8',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAErqxaL7arlWkMvJoHipPtClW5OpDRSHDgRe7fn7YIvbp_-VFBRNBBz2FeL8GQqgoLfIOmbnUgm480D5lOW8jpvLRUyVOoHzXXtt4YRQCQs3ZFGmpVXZCFKaESZ4iXYZ8GUiwlU=s680-w680-h510-rw',
+    caption: 'Evening Refresh',
+    color: 'amber',
+    likes: 310,
+    views: 1250,
+    borderClass: 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.45)] text-amber-400',
+    glowColor: 'rgba(245,158,11,0.3)'
+  },
+  {
+    id: 'g9',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAG3pXxNAYYVCvs0M6gNikcv7iAOGo4PvBplvrmD4c2-tEK6C6b7FS59hcuZ0uq4v8Q01vxM3VscacavAFagUmLkdlQrshkld0XcNgC9zVkDLj59esVn55HCfgvkhZSiUJ6YLfg=s680-w680-h510-rw',
+    caption: 'Neon Signs',
+    color: 'purple',
+    likes: 189,
+    views: 810,
+    borderClass: 'border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.45)] text-purple-400',
+    glowColor: 'rgba(168,85,247,0.3)'
+  },
+  {
+    id: 'g10',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAHIkMjnzukkbdZ5hiUEqBWCCljVDMdKkh7H5_btFeCTZ20n5QkJWu4JCfDfF7GoEuyNr8z1DWz-XVz7YeJaaOTNWQllBGuYUIWbF6BFvsGGR5Y-6ZUCElTyQwSDFd9tW5W2iAA=s680-w680-h510-rw',
+    caption: 'Bustling Energy',
+    color: 'green',
+    likes: 145,
+    views: 580,
+    borderClass: 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.45)] text-emerald-400',
+    glowColor: 'rgba(16,185,129,0.3)'
+  },
+  {
+    id: 'g11',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAFDdkvCsdukuf_oQIkSk-J2931go6N8CixLVA131IPQOxI5aOfdXeRQF-C5I1oJzbOoksJCq5bUHKDzBONIFlMsko_x9WmcLrZUBAJiKJxN0n3IoQAg9EZ-oF6W93Qgj6855t7-Yg=s680-w680-h510-rw',
+    caption: 'Magical Moments',
+    color: 'blue',
+    likes: 215,
+    views: 1040,
+    borderClass: 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.45)] text-cyan-400',
+    glowColor: 'rgba(6,182,212,0.3)'
+  },
+  {
+    id: 'g12',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAHkJGgQwETe-aCnjcPKOTxtcMiP_vqEEbJRqVWPP--N6nCUzO6CZ1XlQ16UxEWZXjIZTjUwb3b2Zt4XTxwY88JTz7onRGPPNrXdhGnYJun6TyccRUQqfh8j2xMAjXeMfQ7uVb6UJg=s680-w680-h510-rw',
+    caption: 'Classic Combos',
+    color: 'pink',
+    likes: 162,
+    views: 710,
+    borderClass: 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.45)] text-pink-400',
+    glowColor: 'rgba(236,72,153,0.3)'
+  },
+  {
+    id: 'g13',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAF2OSR2vp45nruY8xjlRdxMMe7mjoi9skLYgY4Uad1oQdes-T3UTEkmKQvXMiv3h3chglSRMmwRIpF2Kqs-OiA5Ock_Y789DSWaQr3yoTC_gVjhgaTOeDh2Vvt7lTT1XAYDihPm=s680-w680-h510-rw',
+    caption: 'Morning Brews',
+    color: 'amber',
+    likes: 204,
+    views: 890,
+    borderClass: 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.45)] text-amber-400',
+    glowColor: 'rgba(245,158,11,0.3)'
+  },
+  {
+    id: 'g14',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAHl_0jIZw6WkdbLUAOjxjmxsjT40T2cRve9lRzfNAaVVza_iprfTUSeintnyxxki690wQX9e-AVpU9LJ-9g9tQSRpyNvfYeRLaNs0vXuo4eopA3Y4j_iCwRInj_qJpp5bpDPvh4mQ=s680-w680-h510-rw',
+    caption: 'Quiet Table',
+    color: 'purple',
+    likes: 250,
+    views: 1110,
+    borderClass: 'border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.45)] text-purple-400',
+    glowColor: 'rgba(168,85,247,0.3)'
+  },
+  {
+    id: 'g15',
+    url: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAE4NSqr0BJSt9j4WxSp0AQHJM_vycu0sCCOkLWipfm-Uy0eFFqSkl4XXEWszWxXSX_NrFx46-LvYrAyHLaYVfR-AFxUFzbeFVW1DC6bjrsIy3vTnIRt9cC5VMD1SGrnEVjC1b4Q=s680-w680-h510-rw',
+    caption: 'Night Time Cravings',
+    color: 'green',
+    likes: 195,
+    views: 850,
+    borderClass: 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.45)] text-emerald-400',
+    glowColor: 'rgba(16,185,129,0.3)'
+  }
+];
+
 
 export const INITIAL_TESTIMONIALS: Testimonial[] = [
   {

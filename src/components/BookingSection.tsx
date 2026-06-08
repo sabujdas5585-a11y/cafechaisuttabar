@@ -54,28 +54,10 @@ export default function BookingSection({ bookings, setBookings, user }: BookingS
     // Send immediate local device push notification
     triggerPushNotification(
       'Reservation Submitted! 📅',
-      `Hey ${name}, your table request for ${guests} guests on ${date} at ${time} is registered. Staff will confirm shortly!`,
+      `Hey ${name}, your table request for ${guests} guests on ${date} at ${time} is registered. Our staff will review and confirm your slot shortly!`,
       'booking',
       user?.uid || undefined
     );
-
-    // Auto confirmation simulation: after 6 seconds, let there be an automatic staff-confirmed push!
-    // This completes the high-end real-time notification simulation.
-    setTimeout(() => {
-      setBookings(prev => prev.map(item => {
-        if (item.id === newBooking.id) {
-          // Send confirmed notification
-          triggerPushNotification(
-            'Reservation Approved! 🎉',
-            `Great news ${name}! Cafe Chai Sutta Bar has confirmed Table 4 for you for ${date} at ${time}. See you there!`,
-            'booking',
-            item.userId || undefined
-          );
-          return { ...item, status: 'confirmed' as const, tableNo: 'Table 4 (Cozy Window Corner)' };
-        }
-        return item;
-      }));
-    }, 6000);
 
     setSuccessMsg(true);
     // Clear form

@@ -79,6 +79,12 @@ export default function UserProfileSection({ user, bookings, orders, testimonial
     switch (status) {
       case 'placed':
         return <span className="bg-amber-950/40 text-amber-400 border border-amber-900/30 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold">Placed</span>;
+      case 'pending':
+        return <span className="bg-amber-950/60 text-amber-400 border border-amber-900/40 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold animate-pulse animate-duration-1000">WAITING</span>;
+      case 'accepted':
+        return <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-900/30 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold">Accepted</span>;
+      case 'rejected':
+        return <span className="bg-red-950/20 text-red-400 border border-red-900/20 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold">Rejected</span>;
       case 'preparing':
         return <span className="bg-amber-600/10 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold animate-pulse">Brewing</span>;
       case 'ready':
@@ -93,11 +99,13 @@ export default function UserProfileSection({ user, bookings, orders, testimonial
   const getBookingStatusBadge = (status: Booking['status']) => {
     switch (status) {
       case 'pending':
-        return <span className="bg-amber-950/40 text-amber-400 border border-amber-900/40 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold">Pending Approval</span>;
+        return <span className="bg-amber-950/40 text-amber-500 border border-amber-900/40 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold animate-pulse">⏳ Waiting</span>;
       case 'confirmed':
         return <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-900/30 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold">Room Reserved</span>;
       case 'cancelled':
         return <span className="bg-red-950/20 text-red-400 border border-red-900/20 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold">Cancelled</span>;
+      case 'pending_delete':
+        return <span className="bg-rose-950/60 text-rose-300 border border-rose-900/40 px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-bold animate-pulse">Pending Delete</span>;
       default:
         return null;
     }
@@ -303,9 +311,9 @@ export default function UserProfileSection({ user, bookings, orders, testimonial
 
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <span className="text-stone-400 text-[10px] block">Status Status</span>
-                      <span className={`text-[11px] font-bold ${bk.status === 'confirmed' ? 'text-emerald-400' : bk.status === 'cancelled' ? 'text-red-400' : 'text-amber-400'}`}>
-                        {bk.status.toUpperCase()}
+                      <span className="text-stone-400 text-[10px] block">Status</span>
+                      <span className={`text-[11px] font-bold ${bk.status === 'confirmed' ? 'text-emerald-400' : bk.status === 'cancelled' ? 'text-red-400' : bk.status === 'pending_delete' ? 'text-rose-400 animate-pulse' : 'text-amber-500'}`}>
+                        {bk.status === 'pending_delete' ? 'PENDING DELETE' : bk.status === 'pending' ? 'WAITING' : bk.status.toUpperCase()}
                       </span>
                     </div>
                     <ChevronRight className="w-4 h-4 text-stone-600 group-hover:text-amber-500 transition-colors" />
@@ -457,36 +465,48 @@ export default function UserProfileSection({ user, bookings, orders, testimonial
               </div>
 
               {/* Status Tracker step bar */}
-              <div className="bg-stone-950/40 p-3 rounded-2xl border border-stone-850 flex justify-between items-center text-[10px] text-center font-bold relative gap-2">
-                <div className={`space-y-1 flex-1 ${['placed', 'preparing', 'ready', 'completed'].includes(selectedOrder.status) ? 'text-amber-500' : 'text-stone-600'}`}>
-                  <span className="block text-xs">🌾</span>
-                  <span>Placed</span>
+              {selectedOrder.status === 'rejected' ? (
+                <div className="bg-red-950/20 text-red-400 border border-red-900/30 p-3.5 rounded-2xl text-center leading-relaxed font-sans text-xs">
+                  <span className="font-bold block mb-1">❌ Order Rejected</span>
+                  We regret to inform you that our kitchen staff has rejected this order. Please reach out to reception counter.
                 </div>
-                <div className="h-0.5 bg-stone-800 flex-1">
-                  <div className={`h-full bg-amber-500 ${['preparing', 'ready', 'completed'].includes(selectedOrder.status) ? 'w-full' : 'w-0'}`}></div>
+              ) : selectedOrder.status === 'pending' ? (
+                <div className="bg-amber-950/30 text-amber-400 border border-amber-900/30 p-3.5 rounded-2xl text-center leading-relaxed font-sans text-xs animate-pulse">
+                  <span className="font-bold block mb-1">⏳ Waiting</span>
+                  Your culinary session is placed. Waiting for the kitchen staff to review and accept!
                 </div>
-                
-                <div className={`space-y-1 flex-1 ${['preparing', 'ready', 'completed'].includes(selectedOrder.status) ? 'text-amber-500' : 'text-stone-600'}`}>
-                  <span className="block text-xs">🍳</span>
-                  <span>Brewing</span>
-                </div>
-                <div className="h-0.5 bg-stone-800 flex-1">
-                  <div className={`h-full bg-amber-500 ${['ready', 'completed'].includes(selectedOrder.status) ? 'w-full' : 'w-0'}`}></div>
-                </div>
+              ) : (
+                <div className="bg-stone-950/40 p-3 rounded-2xl border border-stone-850 flex justify-between items-center text-[10px] text-center font-bold relative gap-2">
+                  <div className={`space-y-1 flex-1 ${['placed', 'pending', 'accepted', 'preparing', 'ready', 'completed'].includes(selectedOrder.status) ? 'text-amber-500' : 'text-stone-600'}`}>
+                    <span className="block text-xs">🌾</span>
+                    <span>Placed</span>
+                  </div>
+                  <div className="h-0.5 bg-stone-800 flex-1">
+                    <div className={`h-full bg-amber-500 ${['accepted', 'preparing', 'ready', 'completed'].includes(selectedOrder.status) ? 'w-full' : 'w-0'}`}></div>
+                  </div>
+                  
+                  <div className={`space-y-1 flex-1 ${['accepted', 'preparing', 'ready', 'completed'].includes(selectedOrder.status) ? 'text-amber-500' : 'text-stone-600'}`}>
+                    <span className="block text-xs">🍳</span>
+                    <span>{selectedOrder.status === 'accepted' ? 'Accepted' : 'Brewing'}</span>
+                  </div>
+                  <div className="h-0.5 bg-stone-800 flex-1">
+                    <div className={`h-full bg-amber-500 ${['ready', 'completed'].includes(selectedOrder.status) ? 'w-full' : 'w-0'}`}></div>
+                  </div>
 
-                <div className={`space-y-1 flex-1 ${['ready', 'completed'].includes(selectedOrder.status) ? 'text-amber-500 animate-pulse' : 'text-stone-600'}`}>
-                  <span className="block text-xs">🛎️</span>
-                  <span>Ready</span>
-                </div>
-                <div className="h-0.5 bg-stone-800 flex-1">
-                  <div className={`h-full bg-amber-500 ${selectedOrder.status === 'completed' ? 'w-full' : 'w-0'}`}></div>
-                </div>
+                  <div className={`space-y-1 flex-1 ${['ready', 'completed'].includes(selectedOrder.status) ? 'text-amber-500 animate-pulse' : 'text-stone-600'}`}>
+                    <span className="block text-xs">🛎️</span>
+                    <span>Ready</span>
+                  </div>
+                  <div className="h-0.5 bg-stone-800 flex-1">
+                    <div className={`h-full bg-amber-500 ${selectedOrder.status === 'completed' ? 'w-full' : 'w-0'}`}></div>
+                  </div>
 
-                <div className={`space-y-1 flex-1 ${selectedOrder.status === 'completed' ? 'text-emerald-450' : 'text-stone-600'}`}>
-                  <span className="block text-xs">✅</span>
-                  <span>Served</span>
+                  <div className={`space-y-1 flex-1 ${selectedOrder.status === 'completed' ? 'text-emerald-450' : 'text-stone-600'}`}>
+                    <span className="block text-xs">✅</span>
+                    <span>Served</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Order Items receipt detail */}
               <div className="space-y-2 pb-2">
@@ -518,7 +538,30 @@ export default function UserProfileSection({ user, bookings, orders, testimonial
                 <div className="bg-stone-950/30 p-2.5 border border-stone-850 rounded-xl space-y-0.5 col-span-2">
                   <p className="uppercase text-[9px] font-black text-stone-500">Contact Guest</p>
                   <p className="text-stone-200 font-sans">{selectedOrder.customerName} ({selectedOrder.customerPhone})</p>
+                  {selectedOrder.customerEmail && (
+                    <p className="text-stone-400 font-sans mt-0.5">Email: {selectedOrder.customerEmail}</p>
+                  )}
                 </div>
+                {(selectedOrder.houseNumber || selectedOrder.buildingStreet || selectedOrder.areaLocality) && (
+                  <div className="bg-stone-950/30 p-2.5 border border-stone-850 rounded-xl space-y-0.5 col-span-2">
+                    <p className="uppercase text-[9px] font-black text-stone-500">Delivery Address</p>
+                    <p className="text-stone-200 font-sans text-xs">
+                      {selectedOrder.houseNumber ? `${selectedOrder.houseNumber}, ` : ''} 
+                      {selectedOrder.buildingStreet ? `${selectedOrder.buildingStreet}, ` : ''} 
+                      {selectedOrder.areaLocality || ''}
+                    </p>
+                    {selectedOrder.deliveryInstructions && (
+                      <p className="text-amber-500 font-sans text-[11px] mt-1.5 p-1.5 bg-amber-950/20 border border-amber-900/40 rounded-lg">
+                        📝 <span className="font-bold text-stone-300">Instructions:</span> "{selectedOrder.deliveryInstructions}"
+                      </p>
+                    )}
+                    {selectedOrder.latitude !== undefined && selectedOrder.longitude !== undefined && (
+                      <p className="text-[9px] text-amber-505 font-mono mt-1">
+                        GPS Pins: {selectedOrder.latitude.toFixed(5)}, {selectedOrder.longitude.toFixed(5)}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -567,9 +610,13 @@ export default function UserProfileSection({ user, bookings, orders, testimonial
                     <span className="text-red-400 flex items-center gap-1.5">
                       <AlertCircle className="w-4 h-4" /> CANCELLED
                     </span>
+                  ) : selectedBooking.status === 'pending_delete' ? (
+                    <span className="text-rose-400 flex items-center gap-1.5 animate-pulse">
+                      <AlertCircle className="w-4 h-4" /> PENDING DELETE
+                    </span>
                   ) : (
-                    <span className="text-amber-400 flex items-center gap-1.5 animate-pulse">
-                      <Clock className="w-4 h-4" /> PENDING VERIFICATION
+                    <span className="text-amber-500 flex items-center gap-1.5 animate-pulse">
+                      <Clock className="w-4 h-4 animate-spin" /> WAITING FOR APPROVAL
                     </span>
                   )}
                 </div>
@@ -578,7 +625,9 @@ export default function UserProfileSection({ user, bookings, orders, testimonial
                     ? `Your specific table seat ${selectedBooking.tableNo || 'Table 4'} is locked. Present this code at the reception counter.`
                     : selectedBooking.status === 'cancelled'
                     ? 'This reservation voucher was cancelled by you or our lounge manager.'
-                    : 'The staff has received your table seat request. Sit tight, auto-approval executes shortly!'}
+                    : selectedBooking.status === 'pending_delete'
+                    ? 'This reservation is marked as pending deletion by the lounge manager.'
+                    : 'The staff has received your table reservation. It is currently WAITING for administrative review and seating layout confirmation.'}
                 </p>
               </div>
 

@@ -66,20 +66,7 @@ service cloud.firestore {
 
     // 3. Order Rules
     match /orders/{id} {
-      allow read: if true; // Customers see their tracking, admin views all
-      allow create: if isValidId(id) && isValidOrder(incoming());
-      allow update: if isValidId(id) && isValidOrder(incoming());
-      allow delete: if isSignedIn();
-    }
-
-    function isValidOrder(data) {
-      return data.id is string && data.id.size() <= 128
-        && data.customerName is string && data.customerName.size() <= 100
-        && data.customerPhone is string && data.customerPhone.size() <= 20
-        && data.items is list && data.items.size() >= 1
-        && data.totalAmount is number && data.totalAmount >= 0
-        && data.status is string && data.status.matches('^(placed|preparing|ready|completed)$')
-        && data.type is string && data.type.matches('^(dine_in|takeaway)$');
+      allow read, write: if true;
     }
 
     // 4. Ingredient Rules
@@ -110,6 +97,23 @@ service cloud.firestore {
         && data.rating is number && data.rating >= 1 && data.rating <= 5
         && data.text is string && data.text.size() <= 2000
         && data.date is string && data.date.size() <= 30;
+    }
+
+    // 6. Gallery Images
+    match /gallery_images/{document=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    // 7. Support Sessions
+    match /support_sessions/{userId} {
+      allow read, write: if true;
+    }
+
+    // 8. Support Chats
+    match /support_chats/{userId} {
+      match /messages/{messageId} {
+        allow read, write: if true;
+      }
     }
   }
 }

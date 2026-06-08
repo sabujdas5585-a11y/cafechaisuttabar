@@ -76,9 +76,40 @@
         "name": { "type": "string", "description": "Reviewer screen name" },
         "rating": { "type": "number", "description": "Rating score out of 5" },
         "text": { "type": "string", "description": "Feedback description" },
-        "date": { "type": "string", "description": "Date submitted formatted YYYY-MM-DD" }
+        "date": { "type": "string", "description": "Date submitted formatted YYYY-MM-DD" },
+        "isVisible": { "type": "boolean", "description": "Visibility in public UI" },
+        "userId": { "type": "string", "description": "User ID of submitter" },
+        "adminNotes": { "type": "string", "description": "Manager reply" },
+        "status": { "type": "string", "enum": ["none", "working", "resolved"], "description": "Resolution status" }
       },
       "required": ["id", "name", "rating", "text", "date"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "Information about an active or pending chat session.",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "customerId": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "lastMessageTime": { "type": "string" },
+        "unreadCountAdmin": { "type": "number" },
+        "unreadCountCustomer": { "type": "number" }
+      },
+      "required": ["customerName", "customerId", "lastMessage", "lastMessageTime"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single message in a support chat.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "isAdmin": { "type": "boolean" }
+      },
+      "required": ["senderId", "senderName", "text", "timestamp", "isAdmin"]
     }
   },
   "firestore": {
@@ -101,6 +132,14 @@
     "/testimonials/{id}": {
       "schema": "Testimonial",
       "description": "Public customer feedback reviews data"
+    },
+    "/support_sessions/{userId}": {
+      "schema": "ChatSession",
+      "description": "Overview of customer chat sessions"
+    },
+    "/support_chats/{userId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Individual messages in a support chat"
     }
   }
 }

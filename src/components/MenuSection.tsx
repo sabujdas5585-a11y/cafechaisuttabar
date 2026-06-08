@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MenuItem, Order, OrderItem } from '../types';
 import { triggerPushNotification } from './NotificationCenter';
 import {
-  Coffee, Search, Filter, Plus, Minus, ShoppingBag, Trash2, X, ChevronLeft, ChevronRight, Check, Play, Info
+  Coffee, Search, Filter, Plus, Minus, ShoppingBag, Trash2, X, ChevronLeft, ChevronRight, Check, Play, Info, MapPin, Loader2
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 
@@ -12,9 +12,11 @@ interface MenuSectionProps {
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   user: User | null;
   onOpenLogin: () => void;
+  setActiveScreen: (screen: 'home' | 'menu' | 'bookings' | 'gallery' | 'profile' | 'payment') => void;
+  setOrderIdForPayment: (id: string) => void;
 }
 
-export default function MenuSection({ menuItems, orders, setOrders, user, onOpenLogin }: MenuSectionProps) {
+export default function MenuSection({ menuItems, orders, setOrders, user, onOpenLogin, setActiveScreen, setOrderIdForPayment }: MenuSectionProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -23,7 +25,17 @@ export default function MenuSection({ menuItems, orders, setOrders, user, onOpen
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [custName, setCustName] = useState('');
   const [custPhone, setCustPhone] = useState('');
-  const [dineType, setDineType] = useState<'dine_in' | 'takeaway'>('dine_in');
+  const [custEmail, setCustEmail] = useState('');
+  const [houseNumber, setHouseNumber] = useState('');
+  const [buildingStreet, setBuildingStreet] = useState('');
+  const [areaLocality, setAreaLocality] = useState('');
+  const [deliveryInstructions, setDeliveryInstructions] = useState('');
+  const [latitude, setLatitude] = useState<number | undefined>(undefined);
+  const [longitude, setLongitude] = useState<number | undefined>(undefined);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const [dineType, setDineType] = useState<'dine_in' | 'takeaway'>('takeaway');
   const [tableSelection, setTableSelection] = useState('Table 4');
   const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null);
 
@@ -31,8 +43,10 @@ export default function MenuSection({ menuItems, orders, setOrders, user, onOpen
   useEffect(() => {
     if (user) {
       setCustName(user.displayName || user.email?.split('@')[0] || '');
+      setCustEmail(user.email || '');
     } else {
       setCustName('');
+      setCustEmail('');
     }
   }, [user]);
 
@@ -71,6 +85,48 @@ export default function MenuSection({ menuItems, orders, setOrders, user, onOpen
     });
   };
 
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocationLoading(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setLatitude(lat);
+        setLongitude(lng);
+        setLocationLoading(false);
+        
+        // Quietly perform free reverse geocoding via Nominatim OpenStreetMap API
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.address) {
+              const addr = data.address;
+              const house = addr.house_number || addr.building || '';
+              const road = addr.road || addr.suburb || addr.neighbourhood || '';
+              const suburb = addr.suburb || addr.city_district || addr.city || addr.state || '';
+              if (house) setHouseNumber(house);
+              if (road) setBuildingStreet(road);
+              if (suburb) setAreaLocality(suburb);
+            }
+          })
+          .catch(err => {
+            console.log("Nominatim reverse geocode skipped:", err);
+          });
+      },
+      (error) => {
+        setLocationLoading(false);
+        setLocationError("Unable to retrieve location. Please allow permissions.");
+        console.error(error);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
   const handlePlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (cartItemsArray.length === 0 || !custName.trim() || !custPhone.trim()) return;
@@ -89,13 +145,19 @@ export default function MenuSection({ menuItems, orders, setOrders, user, onOpen
       customerPhone: custPhone,
       items: apiOrderItems,
       totalAmount: cartTotal,
-      status: 'placed',
+      status: 'pending',
       type: dineType,
       tableNo: dineType === 'dine_in' ? tableSelection : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      customerEmail: user?.email || undefined,
-      userId: user?.uid || undefined
+      customerEmail: custEmail.trim() || user?.email || undefined,
+      userId: user?.uid || undefined,
+      houseNumber: houseNumber.trim() || undefined,
+      buildingStreet: buildingStreet.trim() || undefined,
+      areaLocality: areaLocality.trim() || undefined,
+      deliveryInstructions: deliveryInstructions.trim() || undefined,
+      latitude: latitude !== undefined ? latitude : undefined,
+      longitude: longitude !== undefined ? longitude : undefined
     };
 
     setOrders(prev => [...prev, newOrder]);
@@ -104,8 +166,19 @@ export default function MenuSection({ menuItems, orders, setOrders, user, onOpen
     setCart({});
     setCustName('');
     setCustPhone('');
+    setCustEmail('');
+    setHouseNumber('');
+    setBuildingStreet('');
+    setAreaLocality('');
+    setDeliveryInstructions('');
+    setLatitude(undefined);
+    setLongitude(undefined);
+    setLocationError(null);
     setIsCartOpen(false);
-    setOrderSuccessId(orderId);
+    
+    // Redirect to payment
+    setOrderIdForPayment(orderId);
+    setActiveScreen('payment');
 
      // Trigger initial Push Notification Alert
      triggerPushNotification(
@@ -114,38 +187,6 @@ export default function MenuSection({ menuItems, orders, setOrders, user, onOpen
        'order',
        user?.uid || undefined
      );
- 
-     // Simulate step-by-step real-time push tracking
-     // Placed -> Preparing (after 6 secs) -> Ready (after 15 secs)
-     setTimeout(() => {
-       setOrders(prev => prev.map(ord => {
-         if (ord.id === orderId) {
-           triggerPushNotification(
-             '🍳 Kitchen Active!',
-             `Chef is brewing your Adrak Elaichi tea right now. Boiling in clay pots...`,
-             'order',
-             ord.userId || undefined
-           );
-           return { ...ord, status: 'preparing', updatedAt: new Date().toISOString() };
-         }
-         return ord;
-       }));
-     }, 6000);
- 
-     setTimeout(() => {
-       setOrders(prev => prev.map(ord => {
-         if (ord.id === orderId) {
-           triggerPushNotification(
-             '🛎️ Hot Sips Ready!',
-             `Order #${orderId.slice(-4)} is sizzling and ready for pickup at clay counter deck!`,
-             'order',
-             ord.userId || undefined
-           );
-           return { ...ord, status: 'ready', updatedAt: new Date().toISOString() };
-         }
-         return ord;
-       }));
-     }, 15000);
   };
 
   const openPhotoViewer = (item: MenuItem) => {
@@ -422,7 +463,7 @@ export default function MenuSection({ menuItems, orders, setOrders, user, onOpen
                 </div>
 
                 {user ? (
-                  <form onSubmit={handlePlaceOrder} className="space-y-3 text-xs">
+                  <form onSubmit={handlePlaceOrder} className="space-y-3.5 text-xs overflow-y-auto max-h-[300px] md:max-h-[360px] pr-1.5 pb-2 scrollbar-thin">
                     <div className="space-y-1">
                       <label className="text-[11px] font-mono text-stone-400 block">Your Name *</label>
                       <input
@@ -447,51 +488,105 @@ export default function MenuSection({ menuItems, orders, setOrders, user, onOpen
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setDineType('dine_in')}
-                        className={`p-2 rounded-lg font-bold border transition ${
-                          dineType === 'dine_in'
-                            ? 'bg-amber-600/10 border-amber-500 text-amber-500'
-                            : 'border-stone-800 text-stone-400 hover:bg-stone-850'
-                        }`}
-                      >
-                        Dine In
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDineType('takeaway')}
-                        className={`p-2 rounded-lg font-bold border transition ${
-                          dineType === 'takeaway'
-                            ? 'bg-amber-600/10 border-amber-500 text-amber-500'
-                            : 'border-stone-800 text-stone-400 hover:bg-stone-850'
-                        }`}
-                      >
-                        Takeaway
-                      </button>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-mono text-stone-400 block">Contact Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={custEmail}
+                        onChange={e => setCustEmail(e.target.value)}
+                        placeholder="e.g. you@example.com"
+                        className="w-full bg-stone-950 border border-stone-800 rounded-lg px-2.5 py-2 text-stone-100 placeholder-stone-600 focus:outline-none"
+                      />
                     </div>
 
-                    {dineType === 'dine_in' && (
-                      <div className="space-y-1 pt-1 animate-fadeIn">
-                        <label className="text-[11px] font-mono text-stone-400 block">Select Table Number</label>
-                        <select
-                          value={tableSelection}
-                          onChange={e => setTableSelection(e.target.value)}
-                          className="w-full bg-stone-950 border border-stone-800 rounded-lg px-2.5 py-2 text-stone-200 focus:outline-none"
-                        >
-                          <option value="Table 1">Table 1 (Window)</option>
-                          <option value="Table 2">Table 2 (Lounge)</option>
-                          <option value="Table 3">Table 3 (Cabin)</option>
-                          <option value="Table 4">Table 4 (Cozy Corner)</option>
-                          <option value="Table 5">Table 5 (Sofa)</option>
-                        </select>
+                    {/* Geolocation Button */}
+                    <div className="pt-1.5">
+                      <button
+                        type="button"
+                        onClick={handleGetCurrentLocation}
+                        disabled={locationLoading}
+                        className="w-full flex items-center justify-center gap-2 bg-stone-950 hover:bg-stone-850 text-stone-400 hover:text-amber-500 py-2.5 px-3 rounded-xl border border-stone-800 text-[10px] active:scale-95 transition font-mono uppercase font-black"
+                      >
+                        {locationLoading ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Locating...
+                          </>
+                        ) : (
+                          <>
+                            <MapPin className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                            Use My Current Location
+                          </>
+                        )}
+                      </button>
+
+                      {locationError && (
+                        <p className="text-[9px] text-red-400 italic mt-1 text-center font-mono leading-tight">{locationError}</p>
+                      )}
+
+                      {latitude !== undefined && longitude !== undefined && (
+                        <p className="text-[9px] text-emerald-400 font-mono mt-1 text-center font-semibold">
+                          ✓ Coordinate Pinned: {latitude.toFixed(5)}, {longitude.toFixed(5)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Address block */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-mono text-stone-400 block">House/Flat No *</label>
+                        <input
+                          type="text"
+                          required
+                          value={houseNumber}
+                          onChange={e => setHouseNumber(e.target.value)}
+                          placeholder="e.g. A-14, 3rd Floor"
+                          className="w-full bg-stone-950 border border-stone-800 rounded-lg px-2.5 py-2 text-stone-100 placeholder-stone-600 focus:outline-none text-[11px]"
+                        />
                       </div>
-                    )}
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-mono text-stone-400 block">Area Locality *</label>
+                        <input
+                          type="text"
+                          required
+                          value={areaLocality}
+                          onChange={e => setAreaLocality(e.target.value)}
+                          placeholder="e.g. Sabuj Bazar"
+                          className="w-full bg-stone-950 border border-stone-800 rounded-lg px-2.5 py-2 text-stone-100 placeholder-stone-600 focus:outline-none text-[11px]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-mono text-stone-400 block">Building / Street Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={buildingStreet}
+                        onChange={e => setBuildingStreet(e.target.value)}
+                        placeholder="e.g. Rabindra Avenue, Near Water Tank"
+                        className="w-full bg-stone-950 border border-stone-800 rounded-lg px-2.5 py-2 text-stone-100 placeholder-stone-600 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-mono text-stone-400 block">Delivery Instructions / Landmarks (Optional)</label>
+                      <textarea
+                        value={deliveryInstructions}
+                        onChange={e => setDeliveryInstructions(e.target.value)}
+                        placeholder="e.g. Leave near gate, call on arrival, next to white building"
+                        rows={2}
+                        className="w-full bg-stone-950 border border-stone-800 rounded-lg px-2.5 py-2 text-stone-100 placeholder-stone-600 focus:outline-none resize-none text-[11px]"
+                      />
+                    </div>
+
+                    {/* Order mode is implicitly Takeaway now */}
 
                     <button
                       type="submit"
-                      className="w-full bg-amber-600 hover:bg-amber-700 text-stone-950 font-extrabold py-3.5 rounded-xl transition duration-200 mt-2 cursor-pointer uppercase tracking-wider"
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-stone-950 font-extrabold py-3.5 rounded-xl transition duration-200 mt-2 cursor-pointer uppercase tracking-wider sticky bottom-0"
                     >
                       Submit Hot Serve Order
                     </button>

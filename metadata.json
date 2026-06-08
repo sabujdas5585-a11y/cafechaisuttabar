@@ -1,6 +1,8 @@
 {
   "name": "Cafe Chai Sutta Bar",
   "description": "Vibrant and cozy mobile-friendly website and admin portal for Cafe Chai Sutta Bar in Jhargram, featuring interactive menu, multi-image dish management, table bookings, customer reviews, inventory status, and push notification center.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "geolocation"
+  ],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -17,7 +17,7 @@ export interface Booking {
   date: string;
   time: string;
   guests: number;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'pending_delete';
   tableNo?: string;
   notes?: string;
   createdAt: string;
@@ -37,13 +37,20 @@ export interface Order {
   customerPhone: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'placed' | 'preparing' | 'ready' | 'completed';
+  status: 'placed' | 'preparing' | 'ready' | 'completed' | 'accepted' | 'rejected' | 'pending';
   type: 'dine_in' | 'takeaway';
   tableNo?: string;
   createdAt: string;
   updatedAt: string;
   customerEmail?: string;
   userId?: string;
+  houseNumber?: string;
+  buildingStreet?: string;
+  areaLocality?: string;
+  latitude?: number;
+  longitude?: number;
+  deliveryInstructions?: string;
+  deliverBefore?: string;
 }
 
 export interface Ingredient {
@@ -65,4 +72,40 @@ export interface Testimonial {
   userId?: string;
   status?: 'none' | 'working' | 'resolved';
   adminNotes?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timestamp: string;
+  isAdmin: boolean;
+}
+
+export interface GalleryImage {
+  id: string;
+  url: string;
+  caption: string;
+  color: string;
+  likes: number;
+  views: number;
+  borderClass: string;
+  glowColor: string;
+}
+
+export interface PaymentSettings {
+  id: string;
+  upiId: string;
+  scannerUrl: string;
+}
+
+export interface ChatSession {
+  id: string; // The user ID of the customer will be the session ID
+  customerName: string;
+  customerId: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCountAdmin: number;
+  unreadCountCustomer: number;
 }
