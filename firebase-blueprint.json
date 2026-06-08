@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "A menu item containing detailed description, category, pricing, availability, and image URLs.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique menu item identifier" },
+        "name": { "type": "string", "description": "Name of the dish or drink" },
+        "description": { "type": "string", "description": "Short appetizing description" },
+        "price": { "type": "number", "description": "Price in INR" },
+        "category": { "type": "string", "enum": ["chai", "sutta", "snacks", "beverages", "fast_food"], "description": "Category tag" },
+        "imageUrls": { "type": "array", "description": "List of hosted image URLs" },
+        "isAvailable": { "type": "boolean", "description": "Toggle indicating if dish is currently in stock" },
+        "isPopular": { "type": "boolean", "description": "Optional toggle indicating trending/best seller" }
+      },
+      "required": ["id", "name", "description", "price", "category", "imageUrls", "isAvailable"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Table reservation details submitted by patrons.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique reservation identifier" },
+        "customerName": { "type": "string", "description": "Name of customer" },
+        "email": { "type": "string", "description": "Contact email address" },
+        "phone": { "type": "string", "description": "Contact telephone number" },
+        "date": { "type": "string", "description": "Date of reservation, format YYYY-MM-DD" },
+        "time": { "type": "string", "description": "Time of reservation, format HH:MM" },
+        "guests": { "type": "number", "description": "Number of guests" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"], "description": "Current status" },
+        "tableNo": { "type": "string", "description": "Assigned table number" },
+        "notes": { "type": "string", "description": "Optional notes or requests" },
+        "createdAt": { "type": "string", "description": "Timestamp when booking was created" }
+      },
+      "required": ["id", "customerName", "email", "phone", "date", "time", "guests", "status", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "An active customer food/drinks order.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique order identifier" },
+        "customerName": { "type": "string", "description": "Name of client or guest reference" },
+        "customerPhone": { "type": "string", "description": "Phone number" },
+        "items": { "type": "array", "description": "List of ordered items with quantities and pricing" },
+        "totalAmount": { "type": "number", "description": "Total checkout price in INR" },
+        "status": { "type": "string", "enum": ["placed", "preparing", "ready", "completed"], "description": "Preparation status" },
+        "type": { "type": "string", "enum": ["dine_in", "takeaway"], "description": "Order mode choice" },
+        "tableNo": { "type": "string", "description": "Assigned table, if dine in" },
+        "createdAt": { "type": "string", "description": "Creation ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "Last updated ISO timestamp" }
+      },
+      "required": ["id", "customerName", "customerPhone", "items", "totalAmount", "status", "type", "createdAt", "updatedAt"]
+    },
+    "Ingredient": {
+      "title": "Ingredient",
+      "description": "Stock levels of inventory raw materials.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Ingredient ID" },
+        "name": { "type": "string", "description": "Name of raw material" },
+        "currentQty": { "type": "number", "description": "Current quantity in stock" },
+        "minQty": { "type": "number", "description": "Minimum alert limit quantity" },
+        "unit": { "type": "string", "description": "Unit of measure" },
+        "category": { "type": "string", "enum": ["dairy", "dry", "fresh", "packaging"], "description": "Stock storage group" }
+      },
+      "required": ["id", "name", "currentQty", "minQty", "unit", "category"]
+    },
+    "Testimonial": {
+      "title": "Testimonial",
+      "description": "Feedback or customer reviews submitted for social proof.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique review identifier" },
+        "name": { "type": "string", "description": "Reviewer screen name" },
+        "rating": { "type": "number", "description": "Rating score out of 5" },
+        "text": { "type": "string", "description": "Feedback description" },
+        "date": { "type": "string", "description": "Date submitted formatted YYYY-MM-DD" }
+      },
+      "required": ["id", "name", "rating", "text", "date"]
+    }
+  },
+  "firestore": {
+    "/menuItems/{id}": {
+      "schema": "MenuItem",
+      "description": "Collections of the cafe recipes and products"
+    },
+    "/bookings/{id}": {
+      "schema": "Booking",
+      "description": "Customer table requests and slot reservations"
+    },
+    "/orders/{id}": {
+      "schema": "Order",
+      "description": "In-house culinary orders and tracking states"
+    },
+    "/ingredients/{id}": {
+      "schema": "Ingredient",
+      "description": "Kitchen storage inventory raw materials"
+    },
+    "/testimonials/{id}": {
+      "schema": "Testimonial",
+      "description": "Public customer feedback reviews data"
+    }
+  }
+}

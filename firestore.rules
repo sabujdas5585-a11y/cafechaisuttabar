@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Helper to check valid email verification
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // 1. Menu Items Rules
+    match /menuItems/{id} {
+      allow read: if true; // Publicly viewable menu
+      allow write: if isSignedIn() && isValidId(id) && isValidMenuItem(incoming());
+    }
+
+    function isValidMenuItem(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.description is string && data.description.size() <= 1000
+        && data.price is number && data.price >= 0 && data.price <= 10000
+        && data.category is string && data.category.matches('^(chai|sutta|snacks|beverages|fast_food)$')
+        && data.imageUrls is list && data.imageUrls.size() >= 1 && data.imageUrls.size() <= 10
+        && data.isAvailable is bool;
+    }
+
+    // 2. Booking Rules
+    match /bookings/{id} {
+      allow read: if true; // Allows clients to see or admin to list
+      allow create: if isValidId(id) && isValidBooking(incoming());
+      allow update, delete: if isSignedIn() && isValidId(id) && isValidBooking(incoming());
+    }
+
+    function isValidBooking(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.customerName is string && data.customerName.size() <= 100
+        && data.email is string && data.email.size() <= 100
+        && data.phone is string && data.phone.size() <= 20
+        && data.date is string && data.date.size() <= 30
+        && data.time is string && data.time.size() <= 10
+        && data.guests is number && data.guests >= 1 && data.guests <= 50
+        && data.status is string && data.status.matches('^(pending|confirmed|cancelled)$')
+        && (!('notes' in data) || data.notes is string && data.notes.size() <= 1000);
+    }
+
+    // 3. Order Rules
+    match /orders/{id} {
+      allow read: if true; // Customers see their tracking, admin views all
+      allow create: if isValidId(id) && isValidOrder(incoming());
+      allow update: if isValidId(id) && isValidOrder(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    function isValidOrder(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.customerName is string && data.customerName.size() <= 100
+        && data.customerPhone is string && data.customerPhone.size() <= 20
+        && data.items is list && data.items.size() >= 1
+        && data.totalAmount is number && data.totalAmount >= 0
+        && data.status is string && data.status.matches('^(placed|preparing|ready|completed)$')
+        && data.type is string && data.type.matches('^(dine_in|takeaway)$');
+    }
+
+    // 4. Ingredient Rules
+    match /ingredients/{id} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidId(id) && isValidIngredient(incoming());
+    }
+
+    function isValidIngredient(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.currentQty is number && data.currentQty >= 0
+        && data.minQty is number && data.minQty >= 0
+        && data.unit is string && data.unit.size() <= 20
+        && data.category is string && data.category.matches('^(dairy|dry|fresh|packaging)$');
+    }
+
+    // 5. Testimonial Rules
+    match /testimonials/{id} {
+      allow read: if true; // Public feedback
+      allow create: if isValidId(id) && isValidTestimonial(incoming());
+      allow update, delete: if isSignedIn() && isValidId(id) && isValidTestimonial(incoming());
+    }
+
+    function isValidTestimonial(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.rating is number && data.rating >= 1 && data.rating <= 5
+        && data.text is string && data.text.size() <= 2000
+        && data.date is string && data.date.size() <= 30;
+    }
+  }
+}
